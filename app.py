@@ -8,8 +8,7 @@ def read_data(file):
 
 def find_differences(df1, df2):
     merged_data = df1.merge(df2, left_on='ID', right_on='ID', how='outer')
-    difference = df1[df1 != df2]
-    return merged_data, difference
+    return merged_data
 
 def format_excel(writer, sheet_name, df):
     df.to_excel(writer, sheet_name=sheet_name, startrow=3)
@@ -58,7 +57,7 @@ def main():
             df1 = pd.read_excel(uploaded_file1)
             df2 = pd.read_excel(uploaded_file2)
 
-            merged_data, difference = find_differences(df1, df2)
+            merged_data= find_differences(df1, df2)
 
             df1 = df1.set_index('ID')
             df2 = df2.set_index('ID')
