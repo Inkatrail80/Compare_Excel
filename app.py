@@ -70,6 +70,7 @@ def main():
             df3a.loc[idx.mask(idx <= 1).dropna().index.get_level_values(0), 'status'] = 'modified'
 
             df3b = df3a[df3a.status != 'nan']
+            df3b.insert(0, 'status', df3b.pop('status'))
 
             if df3b.empty:
                 st.warning("No data to display.")
