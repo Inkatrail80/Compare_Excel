@@ -40,6 +40,22 @@ def save_to_excel(df, sheet_name):
         format_excel(writer, sheet_name, df)
 
     return output
+# Function to highlight cells containing -->
+def highlight_cells(val):
+    if isinstance(val, str) and '-->' in val:
+        return 'background-color: yellow'
+    else:
+        return ''
+
+# Function to style rows based on the "Status" column
+def style_rows(series):
+    styles = [''] * len(series)
+    for i, val in enumerate(series):
+        if val == 'new':
+            styles[i] = 'background-color: lightgreen'
+        elif val == 'deleted':
+            styles[i] = 'background-color: lightcoral'
+    return styles
 
 def main():
     st.title('Excel Comparison Tool')
@@ -62,6 +78,7 @@ def main():
 
             df3a.loc[~df3a.index.isin(df2.index), 'status'] = 'deleted'
             df3a.loc[~df3a.index.isin(df1.index), 'status'] = 'new'
+            
             idx = df3.stack().groupby(level=[0, 1]).nunique()
             df3a.loc[idx.mask(idx <= 1).dropna().index.get_level_values(0), 'status'] = 'modified'
 
@@ -71,7 +88,10 @@ def main():
             if df3b.empty:
                 st.warning("No data to display.")
             else:
-                st.write(df3b)
+                # Apply the style to the DataFrame
+                styled_df = df3b.style.applymap(highlight_cells).apply(style_rows, axis=1)
+                # Display the styled DataFrame in Streamlit
+                st.write(styled_df.to_html(escape=False), unsafe_allow_html=True)
 
                 # Provide download link
                 st.markdown(get_download_link(df3b, "Monitoring"), unsafe_allow_html=True)
