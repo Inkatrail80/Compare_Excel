@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
+import base64
+from io import BytesIO
 
 def read_data(file):
     return pd.read_excel(file, na_values=['NA'])
@@ -32,32 +34,26 @@ def format_excel(writer, sheet_name, df):
     # Apply filter
     worksheet.autofilter('A4:BO10000')
 
-def save_to_excel(df, file_name, sheet_name):
-    
-        # Extract the directory from the file path
-    output_directory = os.path.dirname(file_name)
-
-    # Create the directory if it does not exist
-    if not os.path.exists(output_directory):
-        os.makedirs(output_directory)
-        
-    with pd.ExcelWriter(file_name, engine='xlsxwriter') as writer:
+def save_to_excel(df, sheet_name):
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         format_excel(writer, sheet_name, df)
+
+    return output
 
 def main():
     st.title('Excel Comparison Tool')
 
-    st.sidebar.header('File Selection')
-    uploaded_file1 = st.sidebar.file_uploader("Upload the first Excel file", type=["xlsx"])
-    uploaded_file2 = st.sidebar.file_uploader("Upload the second Excel file", type=["xlsx"])
-    output_file_dest = st.sidebar.text_input("Enter the output file destination:", "C:/python/Excel_diff_formated.xlsx")
+    st.sidebar.header('Select your 2 Excel files')
+    uploaded_file1 = st.sidebar.file_uploader("Upload the first Excel file here", type=["xlsx"])
+    uploaded_file2 = st.sidebar.file_uploader("Upload the second Excel file here", type=["xlsx"])
 
     if st.sidebar.button("Process"):
         if uploaded_file1 is not None and uploaded_file2 is not None:
             df1 = pd.read_excel(uploaded_file1)
             df2 = pd.read_excel(uploaded_file2)
 
-            merged_data= find_differences(df1, df2)
+            merged_data = find_differences(df1, df2)
 
             df1 = df1.set_index('ID')
             df2 = df2.set_index('ID')
@@ -76,7 +72,15 @@ def main():
                 st.warning("No data to display.")
             else:
                 st.write(df3b)
-                save_to_excel(df3b, output_file_dest, "Monitoring")
+
+                # Provide download link
+                st.markdown(get_download_link(df3b, "Monitoring"), unsafe_allow_html=True)
+
+def get_download_link(df, sheet_name):
+    """Generate a download link for the DataFrame."""
+    output = save_to_excel(df, sheet_name)
+    base64_encoded = base64.b64encode(output.getvalue()).decode()
+    return f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{base64_encoded}" download="output.xlsx">Download Excel File</a>'
 
 if __name__ == '__main__':
     main()
